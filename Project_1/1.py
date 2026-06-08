@@ -1,4 +1,4 @@
-from flask import Flask,jsonify,request
+from flask import Flask,jsonify,request,send_from_directory
 import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
 from flask_cors import CORS
@@ -6,7 +6,9 @@ import os
 
 app = Flask(__name__)
 CORS(app)
-
+@app.route("/")
+def home():
+      return send_from_directory(".", "html.html")
 
 data = pd.read_csv("file.csv", encoding="latin-1")
 df = pd.DataFrame(data)
@@ -35,7 +37,7 @@ y=[
     [0],
     [1],
      [1],
-     
+
     [1],
     [0],
     [1],
