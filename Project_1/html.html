@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Student Pass/Fail Predictor</title>
+  <style>
+    :root{
+      --bg:#0b0b0b;
+      --card:#0f0f0f;
+      --muted:#bfbfbf;
+      --accent:#ffffff;
+      --glass: rgba(255,255,255,0.03);
+      --glass-border: rgba(255,255,255,0.06);
+      --success-accent:#bfffbf;
+      --danger-accent:#ffbfbf;
+      --radius:14px;
+      --shadow:0 10px 40px rgba(0,0,0,0.6);
+      --transition: 420ms cubic-bezier(.2,.9,.3,1);
+    }
+
+  
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:
+        radial-gradient(900px 400px at 10% 10%, rgba(255,255,255,0.02), transparent 8%),
+        radial-gradient(700px 300px at 90% 90%, rgba(255,255,255,0.01), transparent 6%),
+        var(--bg);
+      color:var(--accent);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+    }
+
+
+    .container{
+      width:100%;
+      max-width:980px;
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:28px;
+      align-items:start;
+    }
+
+    .card, .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:var(--radius);
+      padding:24px;
+      box-shadow:var(--shadow);
+      border:1px solid var(--glass-border);
+      backdrop-filter: blur(6px) saturate(120%);
+    }
+
+    h1{ margin:0 0 6px; font-size:1.6rem; letter-spacing:-0.02em }
+    .subtitle{ margin:0 0 18px; color:var(--muted); font-size:0.95rem }
+
+    form{ display:grid; gap:14px }
+    .input-row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap }
+    .input-group{ flex:1 1 180px; display:flex; flex-direction:column; gap:8px }
+    label{ font-size:0.95rem; color:var(--muted); display:flex; gap:8px; align-items:center }
+
+    input[type="number"]{
+      padding:12px 14px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.06);
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));
+      color:var(--accent);
+      font-size:1rem;
+      transition: box-shadow var(--transition), transform var(--transition);
+      outline:none;
+    }
+    input[type="number"]:focus{
+      box-shadow: 0 8px 30px rgba(255,255,255,0.03);
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:12px 16px;
+      border-radius:12px;
+      border:1px solid var(--glass-border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      color:var(--accent);
+      cursor:pointer;
+      font-weight:600;
+      transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
+      user-select:none;
+    }
+    .btn:hover{ transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.6) }
+    .btn:active{ transform: translateY(-1px) scale(.997) }
+
+    .panel{ min-height:420px; display:flex; flex-direction:column; gap:18px; justify-content:flex-start }
+    .result-card{
+      border-radius:12px;
+      padding:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));
+      border:1px solid rgba(255,255,255,0.03);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      transition: transform var(--transition), box-shadow var(--transition);
+      min-height:160px;
+    }
+
+    .result-card.positive{ border-left:4px solid var(--success-accent) }
+    .result-card.negative{ border-left:4px solid var(--danger-accent) }
+
+    .prediction{ font-size:1.25rem; font-weight:700; display:flex; align-items:center; gap:12px }
+    .score{ font-size:0.95rem; color:var(--muted) }
+
+    .meter{ width:100%; height:14px; background: rgba(255,255,255,0.03); border-radius:999px; overflow:hidden; border:1px solid rgba(255,255,255,0.02) }
+    .meter > i{
+      display:block;
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, #fff, rgba(255,255,255,0.85));
+      transition: width 900ms cubic-bezier(.2,.9,.3,1);
+      box-shadow: 0 6px 18px rgba(255,255,255,0.03) inset;
+    }
+
+    .percent-label{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      font-size:0.95rem;
+      color:var(--muted);
+    }
+
+    @media (max-width:980px){
+      .container{ grid-template-columns: 1fr; max-width:720px; padding:18px; gap:18px }
+      .panel{ order:2 }
+    }
+    @media (max-width:420px){
+      h1{ font-size:1.25rem }
+      .card, .panel{ padding:16px }
+      input[type="number"]{ padding:10px }
+    }
+
+
+    .card, .panel{ transform: translateY(8px); opacity:0; animation: floatIn 600ms var(--transition) forwards }
+    .panel{ animation-delay:120ms }
+    @keyframes floatIn{ to{ transform:none; opacity:1 } }
+
+  
+    :focus{ outline: 3px solid rgba(255,255,255,0.06); outline-offset:3px; border-radius:8px }
+
+
+    .count {
+      font-weight:700;
+      font-variant-numeric: tabular-nums;
+      transition: color 300ms;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="main">
+    <section class="card" aria-labelledby="title">
+      <h1 id="title">Student Pass Fail Predictor</h1>
+      <p class="subtitle">Predict student performance using Study Hours, Sleep Hours, and Attendance.</p>
+
+      <form id="predictForm" novalidate>
+        <div class="input-row">
+          <div class="input-group">
+            <label for="study">📚 Study Hours per day</label>
+            <input id="study" name="study" type="number" min="0" max="24" step="0.1" placeholder="e.g. 3.5" required>
+          </div>
+
+          <div class="input-group">
+            <label for="sleep">😴 Sleep Hours per day</label>
+            <input id="sleep" name="sleep" type="number" min="0" max="24" step="0.1" placeholder="e.g. 7" required>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="attendance">📅 Attendance (%)</label>
+          <input id="attendance" name="attendance" type="number" min="0" max="100" step="1" placeholder="e.g. 85" required>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:8px; align-items:center;">
+          <button class="btn" id="predictBtn" type="submit" aria-live="polite">Predict Result</button>
+          <button class="btn" id="resetBtn" type="button" style="background:transparent; border-style:dashed;">Reset</button>
+        </div>
+
+        <div style="margin-top:14px; color:var(--muted); font-size:0.9rem;">
+          <strong>Note</strong> This is a practice predictor for UI/UX learning. The formula is illustrative.
+        </div>
+      </form>
+    </section>
+
+    <aside class="panel" aria-labelledby="resultHeading">
+      <div class="result-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <h2 id="resultHeading" style="margin:0;font-size:1.05rem;">Prediction</h2>
+        <div class="score" id="lastUpdated">Waiting for input</div>
+      </div>
+
+      <div class="result-card" id="resultCard" role="status" aria-live="polite">
+        <div class="prediction" id="predictionText">
+          <span style="font-size:1.05rem; opacity:.95;">Waiting for input...</span>
+        </div>
+
+        <div class="percent-label">
+          <div class="score" id="scoreText">Enter values and click Predict</div>
+          <div class="count" id="percentCount">0%</div>
+        </div>
+
+        <div style="width:100%;">
+          <div class="meter" aria-hidden="true"><i id="meterFill"></i></div>
+        </div>
+
+        <div class="hint" id="adviceText" style="color:var(--muted);">Tip: Try increasing study hours or attendance to improve chances.</div>
+      </div>
+
+      <div style="margin-top:auto; color:var(--muted); font-size:0.85rem;">
+        <strong>How it works</strong>
+        <div class="hint">Backend returns <code>{prediction: 0|1, confidence: 0-1 or 0-100}</code>. If confidence missing, UI computes a fallback score.</div>
+      </div>
+    </aside>
+  </div>
+  <script>
+    (function(){
+      const form = document.getElementById('predictForm');
+      const resetBtn = document.getElementById('resetBtn');
+      const resultCard = document.getElementById('resultCard');
+      const predictionText = document.getElementById('predictionText');
+      const scoreText = document.getElementById('scoreText');
+      const meterFill = document.getElementById('meterFill');
+      const adviceText = document.getElementById('adviceText');
+      const percentCount = document.getElementById('percentCount');
+      const lastUpdated = document.getElementById('lastUpdated');
+
+      
+      function computeScoreFallback(study, sleep, attendance){
+        const studyScore = Math.min(100, (study / 8) * 100);
+        const sleepScore = Math.min(100, (sleep / 8) * 100);
+        const attScore = Math.min(100, attendance);
+        const score = (studyScore * 0.5) + (attScore * 0.35) + (sleepScore * 0.15);
+        return Math.round(score);
+      }
+
+
+      function normalizeConfidence(raw){
+        if(raw === undefined || raw === null || Number.isNaN(Number(raw))) return null;
+        const n = Number(raw);
+        if(n <= 1 && n >= 0) return Math.round(n * 100);
+        if(n > 1 && n <= 100) return Math.round(n);
+     
+        return Math.max(0, Math.min(100, Math.round(n)));
+      }
+
+
+      function animateCount(target){
+        const start = Number(percentCount.textContent.replace('%','')) || 0;
+        const duration = 700;
+        const startTime = performance.now();
+        function step(now){
+          const t = Math.min(1, (now - startTime) / duration);
+          const eased = t<.5 ? 2*t*t : -1 + (4 - 2*t)*t; // simple ease
+          const value = Math.round(start + (target - start) * eased);
+          percentCount.textContent = value + '%';
+          if(t < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+     
+      function showResultUI(prediction, confidence){
+     
+        meterFill.style.width = confidence + '%';
+        animateCount(confidence);
+
+      
+        scoreText.textContent = 'Confidence score: ' + confidence + '%';
+        lastUpdated.textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+        if(prediction === 1){
+          resultCard.classList.remove('negative');
+          resultCard.classList.add('positive');
+          predictionText.innerHTML = '<span style="color:#dfffd8">✅ Likely to Pass</span>';
+          adviceText.textContent = 'Good job — keep consistent study and attendance to maintain performance.';
+        } else {
+          resultCard.classList.remove('positive');
+          resultCard.classList.add('negative');
+          predictionText.innerHTML = '<span style="color:#ffd8d8">❌ At Risk of Failing</span>';
+          adviceText.textContent = 'Consider increasing study hours and improving attendance. Small changes help.';
+        }
+
+       
+        resultCard.style.transform = 'translateY(-8px)';
+        setTimeout(()=> resultCard.style.transform = '', 420);
+      }
+
+    
+      async function handlePredict(study, sleep, attendance){
+    
+        try{
+          const resp = await fetch('http://127.0.0.1:5000/predict', {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json' },
+            body: JSON.stringify({ study, sleep, attendance })
+          });
+
+          if(!resp.ok){
+            throw new Error('Server returned ' + resp.status);
+          }
+
+          const data = await resp.json();
+    
+          let pred = null;
+          if('prediction' in data) pred = Number(data.prediction);
+          else if('pred' in data) pred = Number(data.pred);
+          else if('y' in data) pred = Number(data.y);
+
+    
+          let conf = null;
+          if('confidence' in data) conf = normalizeConfidence(data.confidence);
+          else if('probability' in data) conf = normalizeConfidence(data.probability);
+          else if('prob' in data) conf = normalizeConfidence(data.prob);
+          else if('score' in data) conf = normalizeConfidence(data.score);
+
+       
+          if(conf === null){
+            conf = computeScoreFallback(study, sleep, attendance);
+          }
+
+       
+          if(pred !== 0 && pred !== 1){
+            pred = conf >= 60 ? 1 : 0;
+          }
+
+          showResultUI(pred, conf);
+        }catch(err){
+  
+          console.error('Predict error:', err);
+          const fallback = computeScoreFallback(study, sleep, attendance);
+          showResultUI(fallback >= 60 ? 1 : 0, fallback);
+     
+          predictionText.innerHTML += ' <span style="color:#ffb3b3;font-size:0.9rem;margin-left:6px;">(server unreachable — using local estimate)</span>';
+        }
+      }
+
+
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        const study = parseFloat(document.getElementById('study').value) || 0;
+        const sleep = parseFloat(document.getElementById('sleep').value) || 0;
+        const attendance = parseFloat(document.getElementById('attendance').value) || 0;
+
+     
+        if(study < 0 || sleep < 0 || attendance < 0 || attendance > 100){
+          predictionText.textContent = 'Please enter valid non-negative values and attendance 0-100.';
+          return;
+        }
+
+      
+        predictionText.innerHTML = '<span style="opacity:.9">Calculating…</span>';
+        scoreText.textContent = 'Computing confidence...';
+        meterFill.style.width = '0%';
+        percentCount.textContent = '0%';
+
+     
+        handlePredict(study, sleep, attendance);
+      });
+
+    
+      resetBtn.addEventListener('click', function(){
+        form.reset();
+        meterFill.style.width = '0%';
+        percentCount.textContent = '0%';
+        predictionText.innerHTML = '<span>Waiting for input...</span>';
+        scoreText.textContent = 'Enter values and click Predict';
+        lastUpdated.textContent = 'Waiting for input';
+        resultCard.classList.remove('positive','negative');
+        adviceText.textContent = 'Tip: Try increasing study hours or attendance to improve chances.';
+      });
+
+    
+      ['study','sleep','attendance'].forEach(id=>{
+        const el = document.getElementById(id);
+        el.addEventListener('keydown', function(e){
+          if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('predictBtn').click(); }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
+
+
